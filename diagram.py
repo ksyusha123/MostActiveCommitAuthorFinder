@@ -1,16 +1,21 @@
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-dpi = 80
-figure = plt.figure(dpi=dpi, figsize=(4096 / dpi, 3072 / dpi))
-mpl.rcParams.update({'font.size': 10})
-
-plt.title('Commit authors activity')
 
 
 def build_diagram(authors_activity):
-    commits_count = list(authors_activity.values())
-    commits_count.sort(key=lambda x: x, reverse=True)
-    plt.bar(authors_activity.keys(), commits_count)
-    figure.autofmt_xdate(rotation=90)
-    figure.savefig('authors_activity.png')
+    authors_activity_tuples = []
+    authors = []
+    commits_counts = []
+    commits_counts_sum = sum(authors_activity.values())
+    for author in authors_activity:
+        if authors_activity[author] / commits_counts_sum < 0.05:
+            authors.append('')
+        else:
+            authors.append(author)
+        commits_counts.append(authors_activity[author])
+        authors_activity_tuples.append((author, commits_counts))
+    authors_activity_tuples.sort(key=lambda pair: pair[1], reverse=True)
+    explode = tuple([0.1] + [0] * (len(authors_activity_tuples) - 1))
+    figure, ax = plt.subplots()
+    ax.pie(commits_counts, explode=explode, labels=authors)
+    figure.savefig('authors_activity_pie.png')
+    plt.show()
