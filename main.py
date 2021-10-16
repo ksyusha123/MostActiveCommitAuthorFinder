@@ -75,5 +75,4 @@ def main(organisation, diagram, username, token):
 
 
 if __name__ == '__main__':
-    # token = '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'
     main()
