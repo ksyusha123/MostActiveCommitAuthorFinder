@@ -15,4 +15,4 @@
 
 ## Пример запуска  
 python main.py --help  
-python main.py -d ksyusha123 my_unique_token  
+python main.py -d twitter ksyusha123 my_unique_token  

@@ -1,6 +1,7 @@
 import requests
 import click
 from time import perf_counter
+from urllib.parse import quote
 
 from diagram import build_diagram
 
@@ -10,6 +11,8 @@ def _process_commits_info(commits_info, authors_activity):
         try:
             commit_info = full_commit_info["commit"]
         except TypeError:
+            continue
+        if "Merge pull request #" in commit_info["message"]:
             continue
         author_email = commit_info["author"]["email"]
         if author_email not in authors_activity.keys():
@@ -24,7 +27,7 @@ def _get_authors_activity(username, token, organisation):
     current_repos_page = 1
     while True:
         repos_info = requests.get(
-            f'https://api.github.com/orgs/{organisation}/repos'
+            f'https://api.github.com/orgs/{quote(organisation)}/repos'
             f'?page={current_repos_page}',
             auth=(username, token)).json()
         if not repos_info:
@@ -49,14 +52,13 @@ def _get_authors_activity(username, token, organisation):
     return authors_activity
 
 
-def _get_max_commits_count_author(authors_activity):
-    max_commits_count = 0
-    max_commits_author = ''
+def _get_top_commits_count_authors(authors_activity, top_count=100):
+    authors_activity_tuples = []
     for author in authors_activity:
-        if authors_activity[author] > max_commits_count:
-            max_commits_count = authors_activity[author]
-            max_commits_author = author
-    return max_commits_author, max_commits_count
+        authors_activity_tuples.append((author, authors_activity[author]))
+    authors_activity_tuples.sort(key=lambda pair: pair[1], reverse=True)
+    top_commits_authors = authors_activity_tuples[:top_count]
+    return top_commits_authors
 
 
 @click.command(help='Gets max commits count author of the organisation')
@@ -67,11 +69,11 @@ def _get_max_commits_count_author(authors_activity):
 @click.argument('token', required=False, default=None)
 def main(organisation, diagram, username, token):
     authors_activity = _get_authors_activity(username, token, organisation)
-    max_commits_author, max_commits_count = \
-        _get_max_commits_count_author(authors_activity)
+    top_commits_authors = _get_top_commits_count_authors(authors_activity)
     if diagram:
-        build_diagram(authors_activity)
-    click.echo(f'{max_commits_author}: {max_commits_count}')
+        build_diagram(top_commits_authors, organisation)
+    for author in top_commits_authors:
+        click.echo(author)
 
 
 if __name__ == '__main__':
